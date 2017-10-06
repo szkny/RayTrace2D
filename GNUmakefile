@@ -21,7 +21,7 @@ CFLAGS  := -Wall -O2 -std=c++11
 FRAME   := -framework GLUT -framework OpenGL 
 endif
 ifeq ($(UNAME), Linux)
-CFLAGS  := -w -O2 -std=c++11 -I/usr/X11R6/include -L/usr/X11R6/lib -lglut -lGLU -lGL -lXmu -lXi -lXext -lX11 -lm -lpthread
+CFLAGS  := -w -O2 -I/usr/X11R6/include -L/usr/X11R6/lib -lglut -lGLU -lGL -lXmu -lXi -lXext -lX11 -lm -lpthread
 endif
 
 SOURCES := $(wildcard $(SRC_DIR)/*$(SUFFIX))
