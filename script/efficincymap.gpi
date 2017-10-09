@@ -1,0 +1,38 @@
+# set term postscript color
+
+MIN = 8
+MAX = 100 
+dN  = 1
+N   = MIN
+
+do for[i=1:10]{
+	do for[i=1:(MAX-MIN)/dN]{
+		# set output sprintf("EffMap2d_%02dmm.eps",N)
+		reset
+
+			# set view 0,0
+			unset key
+			set xlabel 'mm'
+			set ylabel 'mm'
+
+			set pm3d interpolate 2,2
+			set pm3d map
+			set palette define (0 'black',1 'navy',2 'dark-violet',3 'red',4 'yellow')
+
+			set xrange[-12:12]
+			set yrange[-8:8]
+			set  zrange[0:25]
+			set cbrange[0:25]
+
+			set title sprintf("Solid Angle (%%) : Guide Length %d mm",N)
+
+			sp sprintf("EffMap2d_%02dmm.txt",N) u 1:2:3 w pm3d
+			pause 0.01
+			N = N+dN
+	}
+	N = MIN
+	pause -1
+}
+
+unset pm3d
+

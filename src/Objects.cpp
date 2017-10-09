@@ -15,6 +15,7 @@
 #include<Hue2rgb.h>
 #include<Define.h>
 
+#include<Utility.h>
 #include<Boundary.h>
 #include<Image.h>
 #include<vector>
@@ -39,7 +40,7 @@ double x_lgd = x_max + guide_length;
 double y_lgd = 4.6/2.0;
 
 /* size of pmt tube */
-double tube_length = 0.0;
+double tube_length = 1.0;
 double x_pmt = x_lgd + tube_length;
 double y_pmt = y_lgd;
 
@@ -63,27 +64,41 @@ void CreateVirtualImage(void){
 		bounds.pop_back();
 	}
 	images.clear();
+
+	// first time reflection
 	for(unsigned int i=0;i<sizeinit;++i){
 		images.mirror(bounds[i],0);
 		for(unsigned int j=0;j<sizeinit;++j){
 			images.mirror(bounds[i],bounds[j]);
 		}
 	}
-	// for(unsigned int j=1;j<sizeinit;++i){
-	// 	for(unsigned int j=0;j<sizeinit;++j){
-	// 		images.mirror(bounds[ID[i][j]],i);
-	// 	}
-	// }
 
-	// printf("%lu\n",images.ID.size());
-	// for(unsigned int i=0;i<images.ID.size();++i){
-	// 	for(unsigned int j=0;j<images.ID[i].size();++j){
-	// 		printf("%d ",images.ID[i][j]);
-	// 	}
-	// 	printf("\n");
-	// }
-	// printf("\n\n");
+	// second time reflection
+	unsigned int Ni = images.ID.size();
+	unsigned int BoundSize = bounds.size();
+	for(unsigned int i=1;i<Ni;++i){
+		unsigned int Nj = images.ID[i].size();
+		if(Nj==0) continue;
+		// printf("[%d][%d] %d\n",i,Nj,images.ID[i][Nj-1]);
+		for(unsigned int j=0;j<BoundSize;++j){
+			int BoundIDsize = bounds[j].ID.size();
+			if(1<BoundIDsize){
+				int imageID = images.ID[i][Nj-1];
+				int boundID = bounds[j].ID[BoundIDsize-2];
+				if(imageID==boundID){
+					// printf("[%d][%d] %d\t[%2d] %d\n",i,Nj-1,imageID,j,boundID);
+					images.mirror(bounds[j],i);
+					for(unsigned int k=0;k<BoundSize;++k){
+						printf("[%2d]\t[%2d]\n",j,k);
+						// images.mirror(bounds[i],bounds[j]);
+					}
+				}
+			}
+		}
+	}
+
 	images.setsolidangle(center);
+	fflush(stdout);
 }
 
 void ObjectsInit(void){
@@ -93,8 +108,8 @@ void ObjectsInit(void){
 	bounds.push_back(boundary(2,-x_max,-y_max,-x_max, y_max)); //body
 	bounds.push_back(boundary(3, x_max, y_max, x_lgd, y_lgd)); //guide
 	bounds.push_back(boundary(4, x_max,-y_max, x_lgd,-y_lgd)); //guide
-	// bounds.push_back(boundary(5, x_lgd, y_lgd, x_pmt, y_pmt)); //tube
-	// bounds.push_back(boundary(6, x_lgd,-y_lgd, x_pmt,-y_pmt)); //tube
+	bounds.push_back(boundary(5, x_lgd, y_lgd, x_pmt, y_pmt)); //tube
+	bounds.push_back(boundary(6, x_lgd,-y_lgd, x_pmt,-y_pmt)); //tube
 	sizeinit = bounds.size();
 	CreateVirtualImage();
 }
@@ -197,21 +212,7 @@ void SetRange(int x, int y){
 		VFLAG = true;
 		guide_length = (double)x/SlideSpeed-x_max;
 		if(guide_length<0) guide_length = 0.0;
-		else{
-			ChangeGuideLength();
-			// images.li[0].x = (double)x/SlideSpeed+tube_length;
-			// images.lf[0].x = (double)x/SlideSpeed+tube_length;
-			// bounds[3].lf.x = (double)x/SlideSpeed;
-			// bounds[4].lf.x = (double)x/SlideSpeed;
-			// bounds[5].li.x = (double)x/SlideSpeed;
-			// bounds[6].li.x = (double)x/SlideSpeed;
-			// bounds[5].lf.x = (double)x/SlideSpeed+tube_length;
-			// bounds[6].lf.x = (double)x/SlideSpeed+tube_length;
-			// pmti.x = bounds[5].lf.x;
-			// pmti.y = bounds[5].lf.y;
-			// pmtf.x = bounds[6].lf.x;
-			// pmtf.y = bounds[6].lf.y;
-		}
+		else ChangeGuideLength();
 	}
 }
 
@@ -226,23 +227,52 @@ void SetCenter(int x, int xmouse, int y, int ymouse){
 	}
 }
 
+
 void Macro(){
-	double min =  1.0;
-	double max = 10.0;
-	double dl  =  0.5;
+	ProgressBar ProBar;
+	char DirData[]  = "./data";
+	char DirImage[] = "./data/image";
+	double min =  0.000000;
+	double max = 10.000000;
+	double dl  =  0.100000;
 	int garray = (max-min)/dl+1;
+	int xarray = 151;
+	int yarray = 151;
+	double dx  = 2*x_max/(double)xarray;
+	double dy  = 2*y_max/(double)yarray;
+
+	bool GNUPLOTflag = true;
+	FILE *gnu  = popen("gnuplot -persist","w");
+	if(gnu==NULL){
+		printf("\033[31mcannot open gnuplot.\033[m");
+		return;
+	}
+	if(GNUPLOTflag){
+		fprintf(gnu,"set term postscript color\n");
+		fprintf(gnu,"set pm3d interpolate 2,2\n");
+		fprintf(gnu,"set pm3d map\n");
+		fprintf(gnu,"set palette define (0 'black',1 'navy',2 'dark-violet',3 'red',4 'yellow')\n");
+		fprintf(gnu,"set xrange[-12:12]\n");
+		fprintf(gnu,"set yrange[-8:8]\n");
+		fprintf(gnu,"unset key\nset xlabel 'mm'\nset ylabel 'mm'\n");
+		fprintf(gnu,"set cbrange[0:25]\n");
+		fprintf(gnu,"set title 'Solid Angle (%%)'\n");
+	}
+
 	int counter = 0;
 	for(guide_length=min;guide_length<=max;guide_length+=dl){
 		ChangeGuideLength();
 		char filename[100];
-		sprintf(filename,"./data/EffMap2d_%02dmm.txt",(int)(guide_length*10));
+		sprintf(filename,"%s/EffMap2d_%02dmm.txt",DirData,(int)(guide_length*10));
 		FILE *fp;
 		fp = fopen(filename,"w");
-		const int xarray = 151;
-		const int yarray = 151;
-		const double dx  = 2*x_max/(double)xarray;
-		const double dy  = 2*y_max/(double)yarray;
+		if(fp==NULL){
+			printf("\033[31m[error] cannot open \"%s\".\033[m",filename);
+			return;
+		}
 		for(double x=-x_max+dx/2;x<x_max-dx/2;x+=dx){
+			++counter;
+			ProBar.show(counter,(int)(garray*xarray));
 			for(double y=-y_max+dy/2;y<y_max-dy/2;y+=dy){
 				center.x = x;
 				center.y = y;
@@ -250,30 +280,17 @@ void Macro(){
 				fprintf(fp,"%f\t%f\t%f\n",x,y,images.angle/(2*M_PI)*100);
 			}
 			fprintf(fp,"\n");
-
-			++counter;
-			double percent = (double)counter/(garray*yarray)*100.;
-			printf("\r [%3.0f%%] output file -> '%s'",percent,filename);
-			fflush(stdout);
 		}
+		fflush(fp);
 		fclose(fp);
-
-		// FILE *gnu  = popen("gnuplot -persist","w");
-		// fprintf(gnu,"set term postscript color\nset output \"./data/EffMap2d_%02dmm.eps\"\n",(int)(guide_length*10));
-		// fprintf(gnu,"set pm3d interpolate 2,2\n");
-		// fprintf(gnu,"set pm3d map\n");
-		// fprintf(gnu,"set palette define (0 'black',1 'navy',2 'dark-violet',3 'red',4 'yellow')\n");
-		// fprintf(gnu,"set xrange[-6:11]\n");
-		// fprintf(gnu,"set yrange[-10:10]\n");
-		// fprintf(gnu,"unset key\n");
-		// fprintf(gnu,"set cbrange[10:20]\n");
-		// fprintf(gnu,"set title 'Solid Angle (%%)'\n");
-		// fprintf(gnu,"sp \"%s\" u 1:2:3 w pm3d\n",filename);
-		// fprintf(gnu,"unset pm3d\n");
-		// fflush(gnu);
-		// pclose(gnu);
+		if(GNUPLOTflag){
+			fprintf(gnu,"set output \"%s/EffMap2d_%02dmm.eps\"\n",DirImage,(int)(guide_length*10));
+			fprintf(gnu,"set title \"Solid Angle (%%) : Guide Length %d mm\"\n",(int)(guide_length*10));
+			fprintf(gnu,"sp \"%s\" u 1:2:3 w pm3d\n",filename);
+			fflush(gnu);
+		}
 	}
-	printf("\n        done.\n");
+	pclose(gnu);
 }
 
 

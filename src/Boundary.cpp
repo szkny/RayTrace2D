@@ -24,7 +24,7 @@ boundary::boundary(int IDself, double xi, double yi, double xf, double yf){
 
 boundary::boundary(std::vector<int> &IDlist, int IDself, double xi, double yi, double xf, double yf){
 	for(unsigned i=0;i<IDlist.size();++i)
-		ID.push_back(i);
+		ID.push_back(IDlist[i]);
 	ID.push_back(IDself);
 	li.x = xi;
 	li.y = yi;
@@ -35,7 +35,7 @@ boundary::boundary(std::vector<int> &IDlist, int IDself, double xi, double yi, d
 
 boundary::boundary(std::vector<int> &IDlist, int IDself, vector2d ini, vector2d fin){
 	for(unsigned i=0;i<IDlist.size();++i)
-		ID.push_back(i);
+		ID.push_back(IDlist[i]);
 	ID.push_back(IDself);
 	li.x = ini.x;
 	li.y = ini.y;

@@ -27,8 +27,6 @@ class image{
 		void mirror(boundary bnd, unsigned int id);
 		void mirror(boundary bnd, boundary img);
 		void setsolidangle(vector2d center);
-		// void save(vector2d ini, vector2d fin);
-		void instance(vector2d ini, vector2d fin);
 };
 
 /********************************/
