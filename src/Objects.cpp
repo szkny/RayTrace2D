@@ -23,6 +23,7 @@
 bool SFLAG = true;
 extern bool MFLAG;
 extern bool VFLAG;
+bool SECONDflag = false; //second reflection flag
 
 /* clock time */
 clock_t FrameTbase = 0;   // for frame rate
@@ -50,7 +51,7 @@ vector2d center = {0.0,0.0};
 vector2d pmti;
 vector2d pmtf;
 
-double Range  = 100.;
+double ViewRange  = 100.;
 
 extern double windowW,windowH;
 
@@ -58,6 +59,21 @@ std::vector<boundary> bounds;
 image images( x_pmt,-y_pmt, x_pmt, y_pmt);
 
 unsigned int sizeinit = 0;
+
+void CreateVirtualImage();
+
+void ObjectsInit(void){
+	bounds.reserve(500);
+	bounds.push_back(boundary(0,-x_max, y_max, x_max, y_max)); //body
+	bounds.push_back(boundary(1,-x_max,-y_max, x_max,-y_max)); //body
+	bounds.push_back(boundary(2,-x_max,-y_max,-x_max, y_max)); //body
+	bounds.push_back(boundary(3, x_max, y_max, x_lgd, y_lgd)); //guide
+	bounds.push_back(boundary(4, x_max,-y_max, x_lgd,-y_lgd)); //guide
+	bounds.push_back(boundary(5, x_lgd, y_lgd, x_pmt, y_pmt)); //tube
+	bounds.push_back(boundary(6, x_lgd,-y_lgd, x_pmt,-y_pmt)); //tube
+	sizeinit = bounds.size();
+	CreateVirtualImage();
+}
 
 void CreateVirtualImage(void){
 	while(bounds.size()>sizeinit){
@@ -74,7 +90,6 @@ void CreateVirtualImage(void){
 	}
 
 	// second time reflection
-	bool SECONDflag = true;
 	if(SECONDflag){
 		unsigned int Ni = images.ID.size();
 		unsigned int BoundSize = bounds.size();
@@ -123,19 +138,6 @@ void CreateVirtualImage(void){
 	fflush(stdout);
 }
 
-void ObjectsInit(void){
-	bounds.reserve(500);
-	bounds.push_back(boundary(0,-x_max, y_max, x_max, y_max)); //body
-	bounds.push_back(boundary(1,-x_max,-y_max, x_max,-y_max)); //body
-	bounds.push_back(boundary(2,-x_max,-y_max,-x_max, y_max)); //body
-	bounds.push_back(boundary(3, x_max, y_max, x_lgd, y_lgd)); //guide
-	bounds.push_back(boundary(4, x_max,-y_max, x_lgd,-y_lgd)); //guide
-	bounds.push_back(boundary(5, x_lgd, y_lgd, x_pmt, y_pmt)); //tube
-	bounds.push_back(boundary(6, x_lgd,-y_lgd, x_pmt,-y_pmt)); //tube
-	sizeinit = bounds.size();
-	CreateVirtualImage();
-}
-
 void DrawObjects(void){
 	if(VFLAG){
 		CreateVirtualImage();
@@ -143,16 +145,16 @@ void DrawObjects(void){
 	if(MFLAG){
 		images.setsolidangle(center);
 	}
-	images.resize(Range,Range);
+	images.resize(ViewRange,ViewRange);
 	images.draw();
 	for(unsigned int i=0;i<sizeinit;++i){
-		bounds[i].resize(Range,Range);
+		bounds[i].resize(ViewRange,ViewRange);
 		bounds[i].draw();
 	}
 	if(SFLAG){
 		images.drawvirtual();
 		for(unsigned int i=sizeinit;i<bounds.size();++i){
-			bounds[i].resize(Range,Range);
+			bounds[i].resize(ViewRange,ViewRange);
 			bounds[i].color(0.8,0.8,0.8);
 			bounds[i].draw();
 		}
@@ -179,11 +181,13 @@ void glDisplayStrings(void){
 	glColor3d(0.0,0.0,0.0);
 	static char s[128];
 	STRING("    Frame    : %d fps",TmpCounter,10,20);
-	STRING("    Range    : %5.2e",Range,10,35);
-	STRING("Guide Length : %5.2f cm",guide_length,10,50);
-	STRING("    Angle    : %5.2f %%",images.angle/(2*M_PI)*100,10,65);
+	STRING("    Range    : %5.2e",ViewRange,10,35);
+	if(SECONDflag) glDrawString(" Reflection  : 2",10/windowW,(windowH-50)/windowH);
+	else           glDrawString(" Reflection  : 1",10/windowW,(windowH-50)/windowH);
+	STRING("Guide Length : %5.2f cm",guide_length,10,65);
+	STRING("    Angle    : %5.2f %%",images.angle/(2*M_PI)*100,10,80);
 	sprintf(s,"  Position   : (%+4.1f,%+4.1f) cm",center.x,center.y);
-	glDrawString(s,10/windowW,(windowH-80)/windowH);
+	glDrawString(s,10/windowW,(windowH-95)/windowH);
 }
 #undef STRING
 
@@ -276,7 +280,8 @@ void Macro(){
 		fprintf(gnu,"set palette define (0 'black',1 'navy',2 'dark-violet',3 'red',4 'yellow')\n");
 		fprintf(gnu,"set xrange[-12:12]\n");
 		fprintf(gnu,"set yrange[-8:8]\n");
-		fprintf(gnu,"unset key\nset xlabel 'mm'\nset ylabel 'mm'\n");
+		fprintf(gnu,"unset key\n");
+		// fprintf(gnu,"set xlabel 'mm'\nset ylabel 'mm'\n");
 		fprintf(gnu,"set cbrange[0:25]\n");
 		fprintf(gnu,"set title 'Solid Angle (%%)'\n");
 	}

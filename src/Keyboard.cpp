@@ -14,8 +14,11 @@
 
 extern int NMAX;
 extern bool SFLAG,LFLAG;
+extern bool SECONDflag;
 
-void Macro(); // defined in Objects.cpp
+// function decleration (defined in Objects.cpp)
+void Macro();
+void CreateVirtualImage();
 
 void KeyboardShortcut(unsigned char key, int x, int y){
 	switch(key){
@@ -27,6 +30,11 @@ void KeyboardShortcut(unsigned char key, int x, int y){
 			break;
 		case 'm':
 			Macro();
+			break;
+		case 'n':
+			if(SECONDflag) SECONDflag = false;
+			else SECONDflag = true;
+			CreateVirtualImage();
 			break;
 		default:
 			break;
