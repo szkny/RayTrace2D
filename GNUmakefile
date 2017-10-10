@@ -59,6 +59,7 @@ clean:
 
 # create execute file 
 $(NAME): $(OBJECTS)
+	-@mkdir -p ./data/image
 	-@mkdir -p $(EXE_DIR)
 	@echo " —— linking objects & create $(NAME)"
 	@$(COMPILER) $(OPTIONS) -o $(EXE_DIR)/$@ $?
