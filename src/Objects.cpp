@@ -74,29 +74,51 @@ void CreateVirtualImage(void){
 	}
 
 	// second time reflection
-	unsigned int Ni = images.ID.size();
-	unsigned int BoundSize = bounds.size();
-	for(unsigned int i=1;i<Ni;++i){
-		unsigned int Nj = images.ID[i].size();
-		if(Nj==0) continue;
-		// printf("[%d][%d] %d\n",i,Nj,images.ID[i][Nj-1]);
+	bool SECONDflag = true;
+	if(SECONDflag){
+		unsigned int Ni = images.ID.size();
+		unsigned int BoundSize = bounds.size();
+		for(unsigned int i=1;i<Ni;++i){
+			unsigned int Nj = images.ID[i].size();
+			if(Nj==0) continue;
+			for(unsigned int j=0;j<BoundSize;++j){
+				int BoundIDsize = bounds[j].ID.size();
+				if(1<BoundIDsize){
+					int imageID = images.ID[i][Nj-1];
+					int boundID = bounds[j].ID[BoundIDsize-2];
+					if(imageID==boundID){
+						// printf("[%d][%d] %d\t[%2d] %d\n",i,Nj-1,imageID,j,boundID);
+						images.mirror(bounds[j],i);
+					}
+				}
+			}
+		}
 		for(unsigned int j=0;j<BoundSize;++j){
-			int BoundIDsize = bounds[j].ID.size();
-			if(1<BoundIDsize){
-				int imageID = images.ID[i][Nj-1];
-				int boundID = bounds[j].ID[BoundIDsize-2];
-				if(imageID==boundID){
-					// printf("[%d][%d] %d\t[%2d] %d\n",i,Nj-1,imageID,j,boundID);
-					images.mirror(bounds[j],i);
-					for(unsigned int k=0;k<BoundSize;++k){
-						printf("[%2d]\t[%2d]\n",j,k);
-						// images.mirror(bounds[i],bounds[j]);
+			int BoundID1size = bounds[j].ID.size();
+			if(0<BoundID1size){
+				int boundID1 = bounds[j].ID[BoundID1size-1];
+				for(unsigned int k=sizeinit;k<BoundSize;++k){
+					int BoundID2size = bounds[k].ID.size();
+					if(1<BoundID2size){
+						int boundID2 = bounds[k].ID[BoundID2size-2];
+						if(boundID1==boundID2){
+							// printf("[%2d] %d\t[%2d] %d\n",j,boundID1,k,boundID2);
+							for(unsigned int l=sizeinit;l<BoundSize;++l){
+								int BoundID3size = bounds[l].ID.size();
+								if(1<BoundID3size){
+									int boundID3 = bounds[l].ID[BoundID3size-2];
+									if(boundID1==boundID3 && k!=l){
+										// printf("[%2d] %d\t[%2d] %d\n",k,boundID2,l,boundID3);
+										images.mirror(bounds[k],bounds[l]);
+									}
+								}
+							}
+						}
 					}
 				}
 			}
 		}
 	}
-
 	images.setsolidangle(center);
 	fflush(stdout);
 }
